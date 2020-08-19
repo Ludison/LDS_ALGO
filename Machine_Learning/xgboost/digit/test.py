@@ -14,8 +14,8 @@ import time
 start_time = time.time()
 
 #读入数据
-train = pd.read_csv(r'D:\pythonPro\digit\data\train.csv')
-tests = pd.read_csv(r'D:\pythonPro\digit\data\test.csv')
+train = pd.read_csv(r'D:\pythonPro\LDS_ALGO\data\digit\train.csv')
+tests = pd.read_csv(r'D:\pythonPro\LDS_ALGO\data\digit\test.csv')
 X=train.drop(['label'],axis=1)
 
 Y=train.label
@@ -33,15 +33,18 @@ def modelfit(alg, X, Y, useTrainCV=True, cv_folds=5, early_stopping_rounds=50):
                           xgtrain,
                           num_boost_round=alg.get_params()['n_estimators'],  # 迭代次数
                           nfold=cv_folds,  # 交叉验证中折叠的次数
-                          metrics='auc',  # 评估指标
+                          metrics='mlogloss',  # 评估指标
                           early_stopping_rounds=early_stopping_rounds,  # 需要在每一轮Early_stopping_rounds中至少改善一次以继续训练
-                          verbose_eval=None # 是否显示进度。 如果为None，则返回np.ndarray时将显示进度。 如果为True，则进度将在增强阶段显示。 如果给定一个整数，则将在每个给定的verbose_eval提升阶段显示进度。
+                          verbose_eval=10, # 是否显示进度。 如果为None，则返回np.ndarray时将显示进度。 如果为True，则进度将在增强阶段显示。 如果给定一个整数，则将在每个给定的verbose_eval提升阶段显示进度。
+                          callbacks = [xgb.callback.print_evaluation(show_stdv=False),xgb.callback.early_stop(3)],
+                          show_stdv=True,
+                          stratified=False   #执行分层抽样
                           )
         print(cvresult)
         alg.set_params(n_estimators=cvresult.shape[0])
 
     # Fit the algorithm on the data
-    alg.fit(X, Y, eval_metric='auc')
+    alg.fit(X, Y, eval_metric='mlogloss')
 
     # Predict training set:
     dtrain_predictions = alg.predict(X)
@@ -60,7 +63,7 @@ def modelfit(alg, X, Y, useTrainCV=True, cv_folds=5, early_stopping_rounds=50):
 
 xgb1 = XGBClassifier(
  learning_rate =0.1,  #学习率
- n_estimators=1000,   #基分类器数量
+ n_estimators=100,   #基分类器数量
  max_depth=5,         #最大深度
  min_child_weight=1,  #最小叶子节点样本权重之和
  gamma=0,             #Gamma指定了节点分裂所需的最小损失函数下降值。 这个参数的值越大，算法越保守
